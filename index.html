@@ -58,34 +58,28 @@
 
       for (let x = minX; x <= maxX; x += step) {
         try {
-          const y = compiled.evaluate({ x });
+          const y = compiled.evaluate({ x: x });
           if (typeof y === 'number' && isFinite(y)) {
-            xValues.push(x);
-            yValues.push(y);
+            xValues.push(Number(x.toFixed(2)));
+            yValues.push(Number(y.toFixed(4)));
             minY = Math.min(minY, y);
             maxY = Math.max(maxY, y);
             if (validXMin === null) validXMin = x;
             validXMax = x;
-          } else {
-            xValues.push(x);
-            yValues.push(null);
           }
-        } catch {
-          xValues.push(x);
-          yValues.push(null);
+        } catch (err) {
+          // Skip invalid points
         }
       }
 
-      // Dominio estimado según valores válidos
       const domain = validXMin !== null ? `[${validXMin.toFixed(2)}, ${validXMax.toFixed(2)}] (dentro de [-10, 10])` : "No se pudo calcular";
       domainOutput.textContent = domain;
 
-      // Rango estimado
       const range = (minY !== Infinity && maxY !== -Infinity) ? `[${minY.toFixed(2)}, ${maxY.toFixed(2)}]` : "No se pudo calcular";
       rangeOutput.textContent = range;
 
-      // Graficar
       if (chart) chart.destroy();
+
       chart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -95,8 +89,8 @@
             data: yValues,
             borderColor: 'blue',
             fill: false,
-            spanGaps: false,
-            pointRadius: 0
+            pointRadius: 0,
+            tension: 0.1
           }]
         },
         options: {
@@ -108,16 +102,11 @@
                 callback: value => Number(value).toFixed(1),
                 maxTicksLimit: 20
               },
-              grid: { drawOnChartArea: true },
               min: minX,
               max: maxX
             },
             y: {
               title: { display: true, text: 'f(x)' },
-              ticks: {
-                callback: value => Number(value).toFixed(1),
-              },
-              grid: { drawOnChartArea: true },
               suggestedMin: minY,
               suggestedMax: maxY
             }
