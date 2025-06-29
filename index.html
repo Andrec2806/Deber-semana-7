@@ -5,15 +5,24 @@
   function procesarFuncion() {
     let entrada = document.getElementById('funcion').value.trim();
 
-    // Eliminar "f(x)=" o "f(x) =" al inicio si existe
+    // Eliminar "f(x) = " si existe
     entrada = entrada.replace(/^f\s*\(\s*x\s*\)\s*=\s*/i, '');
+
+    // Reemplazar "sen" por "sin" para funciones trigonométricas en español
+    entrada = entrada.replace(/\bsen\b/gi, 'sin');
+
+    // Insertar multiplicación implícita: 2x -> 2*x, )x -> )*x, x( -> x*(, etc.
+    entrada = entrada.replace(/(\d)([a-zA-Z])/g, '$1*$2'); // 2x -> 2*x
+    entrada = entrada.replace(/([a-zA-Z])(\d)/g, '$1^$2'); // x2 -> x^2
+    entrada = entrada.replace(/([a-zA-Z])([a-zA-Z])/g, '$1*$2'); // xsin -> x*sin
+    entrada = entrada.replace(/(\))([a-zA-Z\d])/g, '$1*$2'); // )x -> )*x
+    entrada = entrada.replace(/([a-zA-Z\d])(\()/g, '$1*('); // x( -> x*(
 
     if (!entrada) {
       alert('Por favor, escribe una función.');
       return;
     }
 
-    // Intervalo para dominio aproximado
     const xmin = -15;
     const xmax = 15;
     const pasos = 500;
@@ -51,7 +60,7 @@
           rangoValores.push(y);
         }
       } catch {
-        // Ignorar puntos donde no se puede evaluar la función
+        // Ignorar errores
       }
     }
 
