@@ -99,3 +99,50 @@
   </script>
 </body>
 </html>
+scales: {
+  x: {
+    title: { display: true, text: 'x' },
+    ticks: {
+      callback: function(value) {
+        return Number(this.getLabelForValue(value)).toFixed(1);
+      },
+      maxTicksLimit: 20
+    },
+    grid: {
+      color: '#ddd',
+      drawBorder: false
+    }
+  },
+  y: {
+    title: { display: true, text: 'f(x)' },
+    ticks: {
+      callback: function(value) {
+        return Number(value).toFixed(1);
+      }
+    },
+    grid: {
+      color: '#ddd',
+      drawBorder: false
+    }
+  }
+},
+plugins: {
+  annotation: {
+    annotations: {
+      xAxis: {
+        type: 'line',
+        xMin: 0,
+        xMax: 0,
+        borderColor: 'black',
+        borderWidth: 1
+      },
+      yAxis: {
+        type: 'line',
+        yMin: 0,
+        yMax: 0,
+        borderColor: 'black',
+        borderWidth: 1
+      }
+    }
+  }
+}
