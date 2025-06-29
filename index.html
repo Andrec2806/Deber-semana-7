@@ -1,38 +1,13 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Calculadora de Funciones: dominio, rango y gráfica</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-  body { font-family: Arial, sans-serif; max-width: 700px; margin: 20px auto; }
-  input, button { font-size: 1rem; padding: 5px; }
-  #resultados { margin-top: 15px; }
-  canvas { background: #f0f0f0; border: 1px solid #ccc; }
-</style>
-</head>
-<body>
-
-<h2>Calculadora de Funciones</h2>
-<p>Escribe una función en variable <code>x</code>, por ejemplo: <code>sqrt(x)</code>, <code>1/(x-1)</code>, <code>x^2+3*x-5</code></p>
-<input type="text" id="funcion" size="40" placeholder="Escribe la función aquí" />
-<button id="calcular">Calcular dominio, rango y graficar</button>
-
-<div id="resultados">
-  <p><strong>Dominio estimado:</strong> <span id="dominio"></span></p>
-  <p><strong>Rango estimado:</strong> <span id="rango"></span></p>
-</div>
-
-<canvas id="grafica" width="650" height="400"></canvas>
-
 <script>
   const ctx = document.getElementById('grafica').getContext('2d');
   let chart = null;
 
   function procesarFuncion() {
-    const entrada = document.getElementById('funcion').value.trim();
+    let entrada = document.getElementById('funcion').value.trim();
+
+    // Eliminar "f(x)=" o "f(x) =" al inicio si existe
+    entrada = entrada.replace(/^f\s*\(\s*x\s*\)\s*=\s*/i, '');
+
     if (!entrada) {
       alert('Por favor, escribe una función.');
       return;
@@ -137,7 +112,3 @@
 
   document.getElementById('calcular').addEventListener('click', procesarFuncion);
 </script>
-
-</body>
-</html>
-<p>Escribe solo la expresión matemática en función de <code>x</code>, por ejemplo: <code>sqrt(x)</code>, <code>1/(x-1)</code>, <code>x^2+3*x-5</code></p>
