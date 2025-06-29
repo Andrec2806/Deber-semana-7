@@ -2,17 +2,17 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Graficador de Funciones</title>
+  <title>Graficador Mejorado</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    canvas { max-width: 100%; height: 400px; }
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+    canvas { max-width: 100%; height: 450px; background: white; border: 1px solid #ccc; }
     .output { margin-top: 20px; }
   </style>
 </head>
 <body>
-  <h2>Ingresa una función matemática</h2>
+  <h2>🧮 Graficador de Funciones Matemáticas</h2>
   <form id="function-form">
     f(x) = <input type="text" id="function-input" placeholder="ej. x^2, sin(x), 1/x" required>
     <button type="submit">Graficar</button>
@@ -40,43 +40,36 @@
       let compiled;
       try {
         compiled = math.compile(expr);
-      } catch (error) {
-        alert("La función ingresada no es válida.");
+      } catch {
+        alert("Función no válida");
         return;
       }
 
-      const xValues = [];
-      const yValues = [];
       const step = 0.1;
-      const minX = -10;
-      const maxX = 10;
+      const minX = -10, maxX = 10;
+      const xValues = [], yValues = [];
 
-      let minY = Infinity;
-      let maxY = -Infinity;
-      let validXMin = null;
-      let validXMax = null;
+      let minY = Infinity, maxY = -Infinity;
+      let validXMin = null, validXMax = null;
 
       for (let x = minX; x <= maxX; x += step) {
         try {
-          const y = compiled.evaluate({ x: x });
+          const y = compiled.evaluate({ x });
           if (typeof y === 'number' && isFinite(y)) {
-            xValues.push(Number(x.toFixed(2)));
-            yValues.push(Number(y.toFixed(4)));
-            minY = Math.min(minY, y);
-            maxY = Math.max(maxY, y);
+            const fixedX = Number(x.toFixed(2));
+            const fixedY = Number(y.toFixed(4));
+            xValues.push(fixedX);
+            yValues.push(fixedY);
+            minY = Math.min(minY, fixedY);
+            maxY = Math.max(maxY, fixedY);
             if (validXMin === null) validXMin = x;
             validXMax = x;
           }
-        } catch (err) {
-          // Skip invalid points
-        }
+        } catch {}
       }
 
-      const domain = validXMin !== null ? `[${validXMin.toFixed(2)}, ${validXMax.toFixed(2)}] (dentro de [-10, 10])` : "No se pudo calcular";
-      domainOutput.textContent = domain;
-
-      const range = (minY !== Infinity && maxY !== -Infinity) ? `[${minY.toFixed(2)}, ${maxY.toFixed(2)}]` : "No se pudo calcular";
-      rangeOutput.textContent = range;
+      domainOutput.textContent = `[${validXMin?.toFixed(2)}, ${validXMax?.toFixed(2)}]`;
+      rangeOutput.textContent = `[${minY.toFixed(2)}, ${maxY.toFixed(2)}]`;
 
       if (chart) chart.destroy();
 
@@ -85,34 +78,52 @@
         data: {
           labels: xValues,
           datasets: [{
-            label: 'f(x)',
+            label: `f(x) = ${expr}`,
             data: yValues,
             borderColor: 'blue',
-            fill: false,
+            backgroundColor: 'rgba(0, 0, 255, 0.1)',
             pointRadius: 0,
-            tension: 0.1
+            borderWidth: 2,
+            tension: 0.15
           }]
         },
         options: {
           responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: `Gráfica de f(x) = ${expr}`,
+              font: { size: 16 }
+            },
+            legend: { display: true }
+          },
           scales: {
             x: {
               title: { display: true, text: 'x' },
-              ticks: {
-                callback: value => Number(value).toFixed(1),
-                maxTicksLimit: 20
-              },
               min: minX,
-              max: maxX
+              max: maxX,
+              grid: {
+                color: '#ddd',
+                drawTicks: false
+              },
+              ticks: {
+                callback: val => Number(val).toFixed(0),
+                color: '#555'
+              }
             },
             y: {
               title: { display: true, text: 'f(x)' },
-              suggestedMin: minY,
-              suggestedMax: maxY
+              min: minY - 1,
+              max: maxY + 1,
+              grid: {
+                color: '#ddd',
+                drawTicks: false
+              },
+              ticks: {
+                callback: val => Number(val).toFixed(0),
+                color: '#555'
+              }
             }
-          },
-          plugins: {
-            legend: { display: false }
           }
         }
       });
