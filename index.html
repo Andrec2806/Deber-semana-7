@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
@@ -39,9 +39,9 @@
     }
 
     // Intervalo para dominio aproximado
-    const xmin = -10;
-    const xmax = 10;
-    const pasos = 500; // más puntos para mayor precisión
+    const xmin = -15;
+    const xmax = 15;
+    const pasos = 500;
 
     let expr;
     try {
@@ -81,7 +81,7 @@
     }
 
     if (dominioEvaluado.length === 0) {
-      alert('La función no tiene valores reales evaluables en el intervalo [-10, 10].');
+      alert('La función no tiene valores reales evaluables en el intervalo [-15, 15].');
       return;
     }
 
