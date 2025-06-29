@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calculadora de Funciones: dominio, rango y gráfica</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 20px auto; }
+  input, button { font-size: 1rem; padding: 5px; }
+  #resultados { margin-top: 15px; }
+  canvas { background: #f0f0f0; border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+
+<h2>Calculadora de Funciones</h2>
+<p>Escribe una función en variable <code>x</code>, por ejemplo: <code>sqrt(x)</code>, <code>1/(x-1)</code>, <code>x^2+3*x-5</code></p>
+<input type="text" id="funcion" size="40" placeholder="Escribe la función aquí" />
+<button onclick="procesarFuncion()">Calcular dominio, rango y graficar</button>
+
+<div id="resultados">
+  <p><strong>Dominio estimado:</strong> <span id="dominio"></span></p>
+  <p><strong>Rango estimado:</strong> <span id="rango"></span></p>
+</div>
+
+<canvas id="grafica" width="650" height="400"></canvas>
+
+<script>
+  const ctx = document.getElementById('grafica').getContext('2d');
+  let chart = null;
+
+  function procesarFuncion() {
+    const entrada = document.getElementById('funcion').value.trim();
+    if (!entrada) {
+      alert('Por favor, escribe una función.');
+      return;
+    }
+
+    // Intervalo para dominio aproximado
+    const xmin = -10;
+    const xmax = 10;
+    const pasos = 200; // puntos para evaluar
+
+    // Crear expresión con math.js
+    let expr;
+    try {
+      expr = math.parse(entrada);
+    } catch (e) {
+      alert('Función inválida: ' + e.message);
+      return;
+    }
+
+    // Crear función evaluable
+    let f;
+    try {
+      f = expr.compile();
+    } catch (e) {
+      alert('No se pudo compilar la función: ' + e.message);
+      return;
+    }
+
+    // Evaluar la función en el intervalo
+    let xs = [];
+    let ys = [];
+    let dominioEvaluado = [];
+    let rangoValores = [];
+
+    for (let i = 0; i <= pasos; i++) {
+      let x = xmin + (i * (xmax - xmin)) / pasos;
+      let y;
+      try {
+        y = f.evaluate({ x: x });
+        // Solo valores reales y finitos
+        if (typeof y === 'number' && isFinite(y)) {
+          xs.push(x);
+          ys.push(y);
+          dominioEvaluado.push(x);
+          rangoValores.push(y);
+        }
+      } catch {
+        // No se puede evaluar, excluir x de dominio
+      }
+    }
+
+    if (dominioEvaluado.length === 0) {
+      alert('La función no es válida o no tiene valores reales en el intervalo -10 a 10.');
+      return;
+    }
+
+    // Determinar dominio aproximado (intervalos donde la función es válida)
+    // Para simplificar, mostrar dominio como intervalo min y max de x donde la función es real
+    let dominioMin = Math.min(...dominioEvaluado);
+    let dominioMax = Math.max(...dominioEvaluado);
+
+    // Determinar rango aproximado
+    let rangoMin = Math.min(...rangoValores);
+    let rangoMax = Math.max(...rangoValores);
+
+    // Mostrar dominio y rango
+    document.getElementById('dominio').textContent = `[${dominioMin.toFixed(3)}, ${dominioMax.toFixed(3)}]`;
+    document.getElementById('rango').textContent = `[${rangoMin.toFixed(3)}, ${rangoMax.toFixed(3)}]`;
+
+    // Graficar usando Chart.js
+    if (chart) {
+      chart.destroy();
+    }
+
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: xs,
+        datasets: [{
+          label: 'f(x) = ' + entrada,
+          data: ys,
+          borderColor: 'blue',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.1,
+        }]
+      },
+      options: {
+        responsive: false,
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            title: { display: true, text: 'x' },
+            min: xmin,
+            max: xmax,
+          },
+          y: {
+            title: { display: true, text: 'f(x)' },
+            suggestedMin: rangoMin - Math.abs(rangoMin)*0.1,
+            suggestedMax: rangoMax + Math.abs(rangoMax)*0.1,
+          }
+        },
+        plugins: {
+          legend: { display: true },
+          tooltip: {
+            mode: 'nearest',
+            intersect: false,
+          }
+        }
+      }
+    });
+  }
+</script>
+
+</body>
+</html>
