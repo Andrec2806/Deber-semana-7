@@ -2,27 +2,35 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Graficador Mejorado</title>
+  <title>Graficador con Ejes Centrales</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
-    canvas { max-width: 100%; height: 450px; background: white; border: 1px solid #ccc; }
-    .output { margin-top: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      padding: 20px;
+    }
+    canvas {
+      background-color: white;
+      border: 1px solid #ccc;
+      max-width: 100%;
+    }
+    input, button {
+      padding: 6px;
+      font-size: 1em;
+    }
   </style>
 </head>
 <body>
-  <h2>🧮 Graficador de Funciones Matemáticas</h2>
+  <h2>🧮 Graficador de Funciones con Ejes Centrales</h2>
   <form id="function-form">
     f(x) = <input type="text" id="function-input" placeholder="ej. x^2, sin(x), 1/x" required>
     <button type="submit">Graficar</button>
   </form>
-
-  <div class="output">
-    <p><strong>Dominio:</strong> <span id="domain-output">-</span></p>
-    <p><strong>Rango (estimado):</strong> <span id="range-output">-</span></p>
-    <canvas id="function-plot"></canvas>
-  </div>
+  <p><strong>Dominio:</strong> <span id="domain-output">-</span></p>
+  <p><strong>Rango (estimado):</strong> <span id="range-output">-</span></p>
+  <canvas id="function-plot" width="900" height="500"></canvas>
 
   <script>
     const form = document.getElementById('function-form');
@@ -68,6 +76,10 @@
         } catch {}
       }
 
+      // Asegurarse que el rango incluye 0
+      if (minY > 0) minY = 0;
+      if (maxY < 0) maxY = 0;
+
       domainOutput.textContent = `[${validXMin?.toFixed(2)}, ${validXMax?.toFixed(2)}]`;
       rangeOutput.textContent = `[${minY.toFixed(2)}, ${maxY.toFixed(2)}]`;
 
@@ -77,15 +89,39 @@
         type: 'line',
         data: {
           labels: xValues,
-          datasets: [{
-            label: `f(x) = ${expr}`,
-            data: yValues,
-            borderColor: 'blue',
-            backgroundColor: 'rgba(0, 0, 255, 0.1)',
-            pointRadius: 0,
-            borderWidth: 2,
-            tension: 0.15
-          }]
+          datasets: [
+            {
+              label: `f(x) = ${expr}`,
+              data: yValues,
+              borderColor: 'blue',
+              pointRadius: 0,
+              borderWidth: 2,
+              tension: 0.1
+            },
+            // Eje X (línea horizontal en y=0)
+            {
+              label: 'Eje X',
+              data: xValues.map(() => 0),
+              borderColor: 'black',
+              borderWidth: 1,
+              pointRadius: 0,
+              borderDash: [5, 5]
+            },
+            // Eje Y (línea vertical en x=0)
+            {
+              label: 'Eje Y',
+              data: xValues.map(x => x === 0 ? minY : null),
+              borderColor: 'black',
+              borderWidth: 1,
+              pointRadius: 0,
+              type: 'line',
+              fill: false,
+              parsing: false,
+              segment: {
+                borderDash: [5, 5]
+              }
+            }
+          ]
         },
         options: {
           responsive: true,
@@ -95,7 +131,7 @@
               text: `Gráfica de f(x) = ${expr}`,
               font: { size: 16 }
             },
-            legend: { display: true }
+            legend: { display: false }
           },
           scales: {
             x: {
@@ -104,11 +140,10 @@
               max: maxX,
               grid: {
                 color: '#ddd',
-                drawTicks: false
+                drawTicks: true
               },
               ticks: {
-                callback: val => Number(val).toFixed(0),
-                color: '#555'
+                color: '#333'
               }
             },
             y: {
@@ -117,11 +152,10 @@
               max: maxY + 1,
               grid: {
                 color: '#ddd',
-                drawTicks: false
+                drawTicks: true
               },
               ticks: {
-                callback: val => Number(val).toFixed(0),
-                color: '#555'
+                color: '#333'
               }
             }
           }
