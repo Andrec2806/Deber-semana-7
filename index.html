@@ -37,7 +37,14 @@
       e.preventDefault();
 
       const expr = input.value;
-      const compiled = math.compile(expr);
+      let compiled;
+      try {
+        compiled = math.compile(expr);
+      } catch (error) {
+        alert("La función ingresada no es válida.");
+        return;
+      }
+
       const xValues = [];
       const yValues = [];
       const step = 0.1;
@@ -46,6 +53,8 @@
 
       let minY = Infinity;
       let maxY = -Infinity;
+      let validXMin = null;
+      let validXMax = null;
 
       for (let x = minX; x <= maxX; x += step) {
         try {
@@ -55,9 +64,11 @@
             yValues.push(y);
             minY = Math.min(minY, y);
             maxY = Math.max(maxY, y);
+            if (validXMin === null) validXMin = x;
+            validXMax = x;
           } else {
             xValues.push(x);
-            yValues.push(null); // Para discontinuidades
+            yValues.push(null);
           }
         } catch {
           xValues.push(x);
@@ -65,12 +76,12 @@
         }
       }
 
-      // Estimación básica de dominio
-      let domain = `[${minX}, ${maxX}] (excepto donde la función no está definida)`;
+      // Dominio estimado según valores válidos
+      const domain = validXMin !== null ? `[${validXMin.toFixed(2)}, ${validXMax.toFixed(2)}] (dentro de [-10, 10])` : "No se pudo calcular";
       domainOutput.textContent = domain;
 
       // Rango estimado
-      let range = `[${minY.toFixed(2)}, ${maxY.toFixed(2)}]`;
+      const range = (minY !== Infinity && maxY !== -Infinity) ? `[${minY.toFixed(2)}, ${maxY.toFixed(2)}]` : "No se pudo calcular";
       rangeOutput.textContent = range;
 
       // Graficar
@@ -84,14 +95,35 @@
             data: yValues,
             borderColor: 'blue',
             fill: false,
-            spanGaps: false
+            spanGaps: false,
+            pointRadius: 0
           }]
         },
         options: {
           responsive: true,
           scales: {
-            x: { title: { display: true, text: 'x' } },
-            y: { title: { display: true, text: 'f(x)' } }
+            x: {
+              title: { display: true, text: 'x' },
+              ticks: {
+                callback: value => Number(value).toFixed(1),
+                maxTicksLimit: 20
+              },
+              grid: { drawOnChartArea: true },
+              min: minX,
+              max: maxX
+            },
+            y: {
+              title: { display: true, text: 'f(x)' },
+              ticks: {
+                callback: value => Number(value).toFixed(1),
+              },
+              grid: { drawOnChartArea: true },
+              suggestedMin: minY,
+              suggestedMax: maxY
+            }
+          },
+          plugins: {
+            legend: { display: false }
           }
         }
       });
@@ -99,50 +131,3 @@
   </script>
 </body>
 </html>
-scales: {
-  x: {
-    title: { display: true, text: 'x' },
-    ticks: {
-      callback: function(value) {
-        return Number(this.getLabelForValue(value)).toFixed(1);
-      },
-      maxTicksLimit: 20
-    },
-    grid: {
-      color: '#ddd',
-      drawBorder: false
-    }
-  },
-  y: {
-    title: { display: true, text: 'f(x)' },
-    ticks: {
-      callback: function(value) {
-        return Number(value).toFixed(1);
-      }
-    },
-    grid: {
-      color: '#ddd',
-      drawBorder: false
-    }
-  }
-},
-plugins: {
-  annotation: {
-    annotations: {
-      xAxis: {
-        type: 'line',
-        xMin: 0,
-        xMax: 0,
-        borderColor: 'black',
-        borderWidth: 1
-      },
-      yAxis: {
-        type: 'line',
-        yMin: 0,
-        yMax: 0,
-        borderColor: 'black',
-        borderWidth: 1
-      }
-    }
-  }
-}
