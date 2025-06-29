@@ -2,124 +2,100 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Graficador</title>
+  <title>Graficador de Funciones</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    canvas { max-width: 100%; height: 400px; }
+    .output { margin-top: 20px; }
+  </style>
 </head>
 <body>
-  <h1>Graficador de funciones</h1>
-  <input type="text" id="funcion" placeholder="Escribe una función: x^2 - 4">
-  <button id="calcular">Graficar</button>
-  <p>Dominio: <span id="dominio"></span></p>
-  <p>Rango: <span id="rango"></span></p>
-  <canvas id="grafica" width="600" height="400"></canvas>
+  <h2>Ingresa una función matemática</h2>
+  <form id="function-form">
+    f(x) = <input type="text" id="function-input" placeholder="ej. x^2, sin(x), 1/x" required>
+    <button type="submit">Graficar</button>
+  </form>
+
+  <div class="output">
+    <p><strong>Dominio:</strong> <span id="domain-output">-</span></p>
+    <p><strong>Rango (estimado):</strong> <span id="range-output">-</span></p>
+    <canvas id="function-plot"></canvas>
+  </div>
 
   <script>
-    const ctx = document.getElementById('grafica').getContext('2d');
-    let chart = null;
+    const form = document.getElementById('function-form');
+    const input = document.getElementById('function-input');
+    const domainOutput = document.getElementById('domain-output');
+    const rangeOutput = document.getElementById('range-output');
+    const ctx = document.getElementById('function-plot').getContext('2d');
 
-    function procesarFuncion() {
-      let entrada = document.getElementById('funcion').value.trim();
-      entrada = entrada.replace(/^f\s*\(\s*x\s*\)\s*=\s*/i, '');
-      entrada = entrada.replace(/\bsen\b/gi, 'sin');
-      entrada = entrada.replace(/(\d)([a-zA-Z])/g, '$1*$2');
-      entrada = entrada.replace(/([a-zA-Z])(\d)/g, '$1^$2');
-      entrada = entrada.replace(/([a-zA-Z])([a-zA-Z])/g, '$1*$2');
-      entrada = entrada.replace(/(\))([a-zA-Z\d])/g, '$1*$2');
-      entrada = entrada.replace(/([a-zA-Z\d])(\()/g, '$1*(');
+    let chart;
 
-      if (!entrada) {
-        alert('Por favor, escribe una función.');
-        return;
-      }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
 
-      const xmin = -15;
-      const xmax = 15;
-      const pasos = 500;
+      const expr = input.value;
+      const compiled = math.compile(expr);
+      const xValues = [];
+      const yValues = [];
+      const step = 0.1;
+      const minX = -10;
+      const maxX = 10;
 
-      let expr;
-      try {
-        expr = math.parse(entrada);
-      } catch (e) {
-        alert('Función inválida: ' + e.message);
-        return;
-      }
+      let minY = Infinity;
+      let maxY = -Infinity;
 
-      let f;
-      try {
-        f = expr.compile();
-      } catch (e) {
-        alert('No se pudo compilar la función: ' + e.message);
-        return;
-      }
-
-      const xs = [], ys = [], dominioEvaluado = [], rangoValores = [];
-
-      for (let i = 0; i <= pasos; i++) {
-        const x = xmin + (i * (xmax - xmin)) / pasos;
-        let y;
+      for (let x = minX; x <= maxX; x += step) {
         try {
-          y = f.evaluate({ x });
+          const y = compiled.evaluate({ x });
           if (typeof y === 'number' && isFinite(y)) {
-            xs.push(x);
-            ys.push(y);
-            dominioEvaluado.push(x);
-            rangoValores.push(y);
+            xValues.push(x);
+            yValues.push(y);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+          } else {
+            xValues.push(x);
+            yValues.push(null); // Para discontinuidades
           }
-        } catch {}
-
+        } catch {
+          xValues.push(x);
+          yValues.push(null);
+        }
       }
 
-      if (dominioEvaluado.length === 0) {
-        alert('La función no tiene valores reales evaluables en el intervalo [-15, 15].');
-        return;
-      }
+      // Estimación básica de dominio
+      let domain = `[${minX}, ${maxX}] (excepto donde la función no está definida)`;
+      domainOutput.textContent = domain;
 
-      const dominioMin = Math.min(...dominioEvaluado);
-      const dominioMax = Math.max(...dominioEvaluado);
-      const rangoMin = Math.min(...rangoValores);
-      const rangoMax = Math.max(...rangoValores);
+      // Rango estimado
+      let range = `[${minY.toFixed(2)}, ${maxY.toFixed(2)}]`;
+      rangeOutput.textContent = range;
 
-      document.getElementById('dominio').textContent = `[${dominioMin.toFixed(3)}, ${dominioMax.toFixed(3)}]`;
-      document.getElementById('rango').textContent = `[${rangoMin.toFixed(3)}, ${rangoMax.toFixed(3)}]`;
-
+      // Graficar
       if (chart) chart.destroy();
-
       chart = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: xs,
+          labels: xValues,
           datasets: [{
-            label: 'f(x) = ' + entrada,
-            data: ys,
+            label: 'f(x)',
+            data: yValues,
             borderColor: 'blue',
-            borderWidth: 2,
-            pointRadius: 0,
             fill: false,
-            tension: 0.2,
+            spanGaps: false
           }]
         },
         options: {
-          responsive: false,
+          responsive: true,
           scales: {
-            x: {
-              type: 'linear',
-              position: 'bottom',
-              title: { display: true, text: 'x' },
-              min: xmin,
-              max: xmax,
-            },
-            y: {
-              title: { display: true, text: 'f(x)' },
-              suggestedMin: rangoMin - Math.abs(rangoMin) * 0.1,
-              suggestedMax: rangoMax + Math.abs(rangoMax) * 0.1,
-            }
+            x: { title: { display: true, text: 'x' } },
+            y: { title: { display: true, text: 'f(x)' } }
           }
         }
       });
-    }
-
-    document.getElementById('calcular').addEventListener('click', procesarFuncion);
+    });
   </script>
 </body>
 </html>
