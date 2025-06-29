@@ -1,123 +1,125 @@
-<script>
-  const ctx = document.getElementById('grafica').getContext('2d');
-  let chart = null;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Graficador</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjs@11.8.0/lib/browser/math.js"></script>
+</head>
+<body>
+  <h1>Graficador de funciones</h1>
+  <input type="text" id="funcion" placeholder="Escribe una función: x^2 - 4">
+  <button id="calcular">Graficar</button>
+  <p>Dominio: <span id="dominio"></span></p>
+  <p>Rango: <span id="rango"></span></p>
+  <canvas id="grafica" width="600" height="400"></canvas>
 
-  function procesarFuncion() {
-    let entrada = document.getElementById('funcion').value.trim();
+  <script>
+    const ctx = document.getElementById('grafica').getContext('2d');
+    let chart = null;
 
-    // Eliminar "f(x) = " si existe
-    entrada = entrada.replace(/^f\s*\(\s*x\s*\)\s*=\s*/i, '');
+    function procesarFuncion() {
+      let entrada = document.getElementById('funcion').value.trim();
+      entrada = entrada.replace(/^f\s*\(\s*x\s*\)\s*=\s*/i, '');
+      entrada = entrada.replace(/\bsen\b/gi, 'sin');
+      entrada = entrada.replace(/(\d)([a-zA-Z])/g, '$1*$2');
+      entrada = entrada.replace(/([a-zA-Z])(\d)/g, '$1^$2');
+      entrada = entrada.replace(/([a-zA-Z])([a-zA-Z])/g, '$1*$2');
+      entrada = entrada.replace(/(\))([a-zA-Z\d])/g, '$1*$2');
+      entrada = entrada.replace(/([a-zA-Z\d])(\()/g, '$1*(');
 
-    // Reemplazar "sen" por "sin" para funciones trigonométricas en español
-    entrada = entrada.replace(/\bsen\b/gi, 'sin');
+      if (!entrada) {
+        alert('Por favor, escribe una función.');
+        return;
+      }
 
-    // Insertar multiplicación implícita: 2x -> 2*x, )x -> )*x, x( -> x*(, etc.
-    entrada = entrada.replace(/(\d)([a-zA-Z])/g, '$1*$2'); // 2x -> 2*x
-    entrada = entrada.replace(/([a-zA-Z])(\d)/g, '$1^$2'); // x2 -> x^2
-    entrada = entrada.replace(/([a-zA-Z])([a-zA-Z])/g, '$1*$2'); // xsin -> x*sin
-    entrada = entrada.replace(/(\))([a-zA-Z\d])/g, '$1*$2'); // )x -> )*x
-    entrada = entrada.replace(/([a-zA-Z\d])(\()/g, '$1*('); // x( -> x*(
+      const xmin = -15;
+      const xmax = 15;
+      const pasos = 500;
 
-    if (!entrada) {
-      alert('Por favor, escribe una función.');
-      return;
-    }
-
-    const xmin = -15;
-    const xmax = 15;
-    const pasos = 500;
-
-    let expr;
-    try {
-      expr = math.parse(entrada);
-    } catch (e) {
-      alert('Función inválida: ' + e.message);
-      return;
-    }
-
-    let f;
-    try {
-      f = expr.compile();
-    } catch (e) {
-      alert('No se pudo compilar la función: ' + e.message);
-      return;
-    }
-
-    const xs = [];
-    const ys = [];
-    const dominioEvaluado = [];
-    const rangoValores = [];
-
-    for (let i = 0; i <= pasos; i++) {
-      const x = xmin + (i * (xmax - xmin)) / pasos;
-      let y;
+      let expr;
       try {
-        y = f.evaluate({ x });
-        if (typeof y === 'number' && isFinite(y)) {
-          xs.push(x);
-          ys.push(y);
-          dominioEvaluado.push(x);
-          rangoValores.push(y);
-        }
-      } catch {
-        // Ignorar errores
+        expr = math.parse(entrada);
+      } catch (e) {
+        alert('Función inválida: ' + e.message);
+        return;
       }
-    }
 
-    if (dominioEvaluado.length === 0) {
-      alert('La función no tiene valores reales evaluables en el intervalo [-15, 15].');
-      return;
-    }
+      let f;
+      try {
+        f = expr.compile();
+      } catch (e) {
+        alert('No se pudo compilar la función: ' + e.message);
+        return;
+      }
 
-    const dominioMin = Math.min(...dominioEvaluado);
-    const dominioMax = Math.max(...dominioEvaluado);
-    const rangoMin = Math.min(...rangoValores);
-    const rangoMax = Math.max(...rangoValores);
+      const xs = [], ys = [], dominioEvaluado = [], rangoValores = [];
 
-    document.getElementById('dominio').textContent = `[${dominioMin.toFixed(3)}, ${dominioMax.toFixed(3)}]`;
-    document.getElementById('rango').textContent = `[${rangoMin.toFixed(3)}, ${rangoMax.toFixed(3)}]`;
-
-    if (chart) {
-      chart.destroy();
-    }
-
-    chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: xs,
-        datasets: [{
-          label: 'f(x) = ' + entrada,
-          data: ys,
-          borderColor: 'blue',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.2,
-        }]
-      },
-      options: {
-        responsive: false,
-        scales: {
-          x: {
-            type: 'linear',
-            position: 'bottom',
-            title: { display: true, text: 'x' },
-            min: xmin,
-            max: xmax,
-          },
-          y: {
-            title: { display: true, text: 'f(x)' },
-            suggestedMin: rangoMin - Math.abs(rangoMin) * 0.1,
-            suggestedMax: rangoMax + Math.abs(rangoMax) * 0.1,
+      for (let i = 0; i <= pasos; i++) {
+        const x = xmin + (i * (xmax - xmin)) / pasos;
+        let y;
+        try {
+          y = f.evaluate({ x });
+          if (typeof y === 'number' && isFinite(y)) {
+            xs.push(x);
+            ys.push(y);
+            dominioEvaluado.push(x);
+            rangoValores.push(y);
           }
-        },
-        plugins: {
-          legend: { display: true },
-          tooltip: { mode: 'nearest', intersect: false }
-        }
-      }
-    });
-  }
+        } catch {}
 
-  document.getElementById('calcular').addEventListener('click', procesarFuncion);
-</script>
+      }
+
+      if (dominioEvaluado.length === 0) {
+        alert('La función no tiene valores reales evaluables en el intervalo [-15, 15].');
+        return;
+      }
+
+      const dominioMin = Math.min(...dominioEvaluado);
+      const dominioMax = Math.max(...dominioEvaluado);
+      const rangoMin = Math.min(...rangoValores);
+      const rangoMax = Math.max(...rangoValores);
+
+      document.getElementById('dominio').textContent = `[${dominioMin.toFixed(3)}, ${dominioMax.toFixed(3)}]`;
+      document.getElementById('rango').textContent = `[${rangoMin.toFixed(3)}, ${rangoMax.toFixed(3)}]`;
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: xs,
+          datasets: [{
+            label: 'f(x) = ' + entrada,
+            data: ys,
+            borderColor: 'blue',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+            tension: 0.2,
+          }]
+        },
+        options: {
+          responsive: false,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              title: { display: true, text: 'x' },
+              min: xmin,
+              max: xmax,
+            },
+            y: {
+              title: { display: true, text: 'f(x)' },
+              suggestedMin: rangoMin - Math.abs(rangoMin) * 0.1,
+              suggestedMax: rangoMax + Math.abs(rangoMax) * 0.1,
+            }
+          }
+        }
+      });
+    }
+
+    document.getElementById('calcular').addEventListener('click', procesarFuncion);
+  </script>
+</body>
+</html>
