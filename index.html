@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
@@ -18,7 +18,7 @@
 <h2>Calculadora de Funciones</h2>
 <p>Escribe una función en variable <code>x</code>, por ejemplo: <code>sqrt(x)</code>, <code>1/(x-1)</code>, <code>x^2+3*x-5</code></p>
 <input type="text" id="funcion" size="40" placeholder="Escribe la función aquí" />
-<button onclick="procesarFuncion()">Calcular dominio, rango y graficar</button>
+<button id="calcular">Calcular dominio, rango y graficar</button>
 
 <div id="resultados">
   <p><strong>Dominio estimado:</strong> <span id="dominio"></span></p>
@@ -41,9 +41,8 @@
     // Intervalo para dominio aproximado
     const xmin = -10;
     const xmax = 10;
-    const pasos = 200; // puntos para evaluar
+    const pasos = 500; // más puntos para mayor precisión
 
-    // Crear expresión con math.js
     let expr;
     try {
       expr = math.parse(entrada);
@@ -52,7 +51,6 @@
       return;
     }
 
-    // Crear función evaluable
     let f;
     try {
       f = expr.compile();
@@ -61,18 +59,16 @@
       return;
     }
 
-    // Evaluar la función en el intervalo
-    let xs = [];
-    let ys = [];
-    let dominioEvaluado = [];
-    let rangoValores = [];
+    const xs = [];
+    const ys = [];
+    const dominioEvaluado = [];
+    const rangoValores = [];
 
     for (let i = 0; i <= pasos; i++) {
-      let x = xmin + (i * (xmax - xmin)) / pasos;
+      const x = xmin + (i * (xmax - xmin)) / pasos;
       let y;
       try {
-        y = f.evaluate({ x: x });
-        // Solo valores reales y finitos
+        y = f.evaluate({ x });
         if (typeof y === 'number' && isFinite(y)) {
           xs.push(x);
           ys.push(y);
@@ -80,29 +76,23 @@
           rangoValores.push(y);
         }
       } catch {
-        // No se puede evaluar, excluir x de dominio
+        // Ignorar puntos donde no se puede evaluar la función
       }
     }
 
     if (dominioEvaluado.length === 0) {
-      alert('La función no es válida o no tiene valores reales en el intervalo -10 a 10.');
+      alert('La función no tiene valores reales evaluables en el intervalo [-10, 10].');
       return;
     }
 
-    // Determinar dominio aproximado (intervalos donde la función es válida)
-    // Para simplificar, mostrar dominio como intervalo min y max de x donde la función es real
-    let dominioMin = Math.min(...dominioEvaluado);
-    let dominioMax = Math.max(...dominioEvaluado);
+    const dominioMin = Math.min(...dominioEvaluado);
+    const dominioMax = Math.max(...dominioEvaluado);
+    const rangoMin = Math.min(...rangoValores);
+    const rangoMax = Math.max(...rangoValores);
 
-    // Determinar rango aproximado
-    let rangoMin = Math.min(...rangoValores);
-    let rangoMax = Math.max(...rangoValores);
-
-    // Mostrar dominio y rango
     document.getElementById('dominio').textContent = `[${dominioMin.toFixed(3)}, ${dominioMax.toFixed(3)}]`;
     document.getElementById('rango').textContent = `[${rangoMin.toFixed(3)}, ${rangoMax.toFixed(3)}]`;
 
-    // Graficar usando Chart.js
     if (chart) {
       chart.destroy();
     }
@@ -118,7 +108,7 @@
           borderWidth: 2,
           pointRadius: 0,
           fill: false,
-          tension: 0.1,
+          tension: 0.2,
         }]
       },
       options: {
@@ -133,20 +123,19 @@
           },
           y: {
             title: { display: true, text: 'f(x)' },
-            suggestedMin: rangoMin - Math.abs(rangoMin)*0.1,
-            suggestedMax: rangoMax + Math.abs(rangoMax)*0.1,
+            suggestedMin: rangoMin - Math.abs(rangoMin) * 0.1,
+            suggestedMax: rangoMax + Math.abs(rangoMax) * 0.1,
           }
         },
         plugins: {
           legend: { display: true },
-          tooltip: {
-            mode: 'nearest',
-            intersect: false,
-          }
+          tooltip: { mode: 'nearest', intersect: false }
         }
       }
     });
   }
+
+  document.getElementById('calcular').addEventListener('click', procesarFuncion);
 </script>
 
 </body>
